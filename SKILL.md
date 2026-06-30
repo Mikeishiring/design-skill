@@ -31,6 +31,9 @@ This skill fuses **Benji Taylor's** data-dense, tool-grade precision with **Stri
 8. **Asymmetric timing.** Entrances are always slower than exits. Additions feel deliberate, removals feel responsive.
 9. **3-layer interaction on everything.** Glance = the insight is visible immediately (0 effort). Hover = context, exact values, related data appear (minimal effort). Click = full exploration, editing, drill-down (intentional effort). No data point should be a dead end. Every chart must respond to interaction. Every number should be hoverable.
 10. **Semantic consolidation.** One element should carry maximum semantic load — action, state, and navigation — without sacrificing clarity. A status badge that's also a dropdown to change the status. A nav link that shows progress. A caption that labels, editorializes, AND instructs. Ask: "Can this element do more?" The win is not fewer components — it's less thinking per task.
+11. **Ambient information first.** The best information needs no action to absorb — it lives in the periphery as color, motion, density, or position. Before adding a label, panel, or click target, ask: *can this be ambient?* Status as a tint, trend as a background sparkline, liveness as a slow pulse, a count as a badge on the thing itself. The user should feel informed without ever "checking."
+12. **Deduplicate ruthlessly — one fact, one place.** Never render the same datum, label, unit, or control twice; if it appears in two spots, one of them is clutter. Every element earns its place by carrying information no other element carries. Build, then cut until it breaks, then add back only what you actually lost. A page where nothing repeats is a page that breathes — and the whitespace is what makes the remaining data hit.
+13. **Reach for the creative option.** If a generic tool could have produced it, it isn't finished. Every surface deserves at least one specific, memorable, slightly-unreasonable choice — the move that proves a human with taste made this. Creativity is the default posture, not a reward unlocked by a high novelty budget.
 
 ---
 
@@ -721,6 +724,30 @@ Every data point, chart, metric, and control implements three layers:
 
 If a data point only has layer 1, it's a dead end. If a chart has no hover interaction, it's a screenshot pretending to be a component.
 
+### Ambient Information (Layer Zero)
+
+The 3-Layer Rule starts at *glance* — but the most elegant information sits **below** glance: absorbed in the periphery without directed attention. This is **layer zero — ambient.** The user knows the state without looking *for* it, because it's encoded into something already on screen.
+
+**The test:** *Could the user know this without looking for it?* If they'd have to hunt, hover, or click to learn something they should always feel, make it ambient.
+
+**Ambient channels** — encode info into properties already present, don't add new elements:
+
+| Channel | Carries | Example |
+|---------|---------|---------|
+| **Color / tint** | Status, health, direction | Row tints red when over budget; a value goes green on an uptick |
+| **Motion** | Liveness, activity | A slow pulse = connected & live; drifting labels = order flow |
+| **Density** | Volume, load | More dots = busier; sparser = calm |
+| **Position** | Type, rank | Spatial consistency — the same slot always means the same thing |
+| **Size / weight** | Importance, magnitude | A number's weight scales with its value |
+| **Background fill** | Trend, progress | Sparkline behind a KPI; fill level inside the button |
+| **Badge / dot** | Count, presence | Unread count on the tab; presence dot on the avatar |
+
+**Rules for ambient:**
+- **Calm by default.** Ambient motion for low-priority info must be quiet — a 2.5s breathing pulse, not a flash. Loud motion is reserved for the rare event that earns interruption. (Respect the novelty/motion budget and `prefers-reduced-motion`.)
+- **Encode, don't add.** Ambient is *not* more elements — it's loading meaning into elements that already exist. A separate "Status: OK" label is the *opposite* of ambient; tint the thing instead.
+- **One channel per fact.** Don't signal the same state with color *and* an icon *and* a label — pick the quietest channel that reads, and stop (see Deduplication).
+- **Ambient is the hook, not the whole story.** It says *something changed*; glance → hover → click reveal *what* and *why*. Escalate from there.
+
 ### Compound Control Taxonomy
 
 Make one element carry multiple semantic loads:
@@ -743,6 +770,22 @@ Before shipping any component, ask:
 - Is there a separate progress indicator that could be embedded into the primary action?
 - Are there adjacent controls that could merge? (e.g., left/right buttons that also show reading progress)
 - Is the heading also the section divider? (Benji's h2 + horizontal rule = one element, two roles)
+
+### Deduplication (One Fact, One Place)
+
+Clutter is mostly repetition. The same number in the header and the card; the unit printed on every row instead of once in the column header; a legend that restates the axis; an icon paired with a label that says the same word; two buttons a hair apart in meaning. **Each fact, label, unit, and control should appear exactly once.** The second instance isn't reinforcement — it's noise, and it costs the page its impact.
+
+**Dedup scan** (run before shipping any page):
+- [ ] **Same value twice?** A metric in a KPI card *and* the chart axis *and* the tooltip — keep the one closest to where it's needed, drop the rest.
+- [ ] **Repeated units / labels?** Lift `$`, `%`, `ms`, or a recurring word up into the column header / section title — state it once.
+- [ ] **Redundant encoding?** Color *and* icon *and* text all signaling "error" — keep the quietest one that reads (usually color or icon, not all three).
+- [ ] **Legend duplicating the axis or the line labels?** Drop the legend; label the line ends, or let the single-line legend carry it.
+- [ ] **Near-duplicate controls?** Two filters / buttons / links with overlapping jobs — merge into one compound control.
+- [ ] **Restated headings?** A page title, a breadcrumb, and an `<h1>` all saying the same thing — one wins.
+
+**When a fact genuinely must be referenced twice,** make one the canonical source and the other a *pointer* (a link, an anchor, a derived summary) — never a verbatim restatement that can drift out of sync.
+
+**Then let it breathe.** Every duplicate removed is room returned to what remains. Impact is contrast: one bold number in clear space outweighs ten competing for the same attention. After the dedup pass, resist refilling the space you just won — the emptiness is doing work.
 
 ### Information Sizing (Keep Everything on the Page)
 
@@ -1094,6 +1137,10 @@ When building a component, ask:
 
 ### Information Architecture
 - Showing everything at once — use the Three Unfoldings: Hook → Body → Reward. (Source: BenjiStripe Soul Philosophy)
+- Duplicated information — the same value, label, or unit rendered in two places. One fact, one place; the second instance is clutter that costs the page its impact. (Source: Deduplication)
+- Redundant encoding — signaling one state with color AND icon AND text. Keep the quietest channel that reads, drop the rest. (Source: Ambient Information / Deduplication)
+- Clutter with no breathing room — >7 competing elements, or dense data with no whitespace around it. Cut until it breaks, then add back one. Impact comes from contrast with space, not from filling it. (Source: Core Philosophy — Let It Breathe)
+- Making the user "check" for status — anything that should always be felt (health, liveness, count, freshness) belongs encoded ambiently (tint, pulse, badge), not buried behind a glance or click. (Source: Ambient Information)
 - Hiding TOO much behind progressive disclosure — critical info (price, status, errors) must be layer 1. (Source: NN/g progressive disclosure research)
 - Inconsistent disclosure patterns — pick a vocabulary (hover = preview, click = expand) and apply it everywhere. (Source: NN/g)
 - Data points with no hover state — every number, chart element, and metric needs layer 2 (hover context). (Source: 3-Layer Interaction Rule)
@@ -1243,6 +1290,13 @@ Think like someone arriving for the first time, not someone who wrote the code:
 - [ ] Are there adjacent controls that could merge into a compound control?
 - [ ] Hero section earns attention: bold claim + impressive visual, Show → Tell → Do flow
 - [ ] Page follows DENSE → BREATHE → DENSE → BREATHE → EXHALE pacing rhythm
+
+### Information Hygiene (Ambient · Dedup · Breathe)
+- [ ] **Ambient where possible** — status, liveness, trend, freshness, and counts are encoded into existing elements (tint, pulse, background sparkline, badge), not added as separate labels the user must read
+- [ ] **Deduplicated** — ran the dedup scan; no value, label, unit, or control appears twice; every element carries information nothing else does
+- [ ] **Single encoding per fact** — no color + icon + text all saying the same thing; the quietest channel that reads wins
+- [ ] **Breathing room** — is there anything that could be removed without losing meaning? If yes, remove it — then leave the space you won, don't refill it
+- [ ] **One creative move per surface** — at least one specific, memorable, non-generic choice (ties to Soul Check). If a generic AI could have made it, push further
 
 ### Dashboard = Program (when building any dashboard / analytics surface)
 - [ ] A single state object drives every view; interactions write to it, views render from it
