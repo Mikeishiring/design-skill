@@ -1,5 +1,5 @@
 ---
-description: "Apply Benji + Stripe fused design language. Use when building frontends, dashboards, marketing pages, data-rich UIs, or live charts that need to feel both precise and premium."
+description: "Apply the Benji + Stripe fused design language — precision developer luxe. Use when building frontends, form controls (selects, sliders, dials, toggles), interactive multi-view dashboards, marketing pages, data-rich UIs, or live charts that need to feel both precise and premium. Forbids native/unstyled controls and static dashboards."
 ---
 
 # /benjistripe — Precision Developer Luxe
@@ -558,6 +558,112 @@ Active link uses `font-variation-settings: 'wght' 500`.
 
 ---
 
+## Controls, Dials & Selectors
+
+The single biggest tell of an unfinished interface is a **native control**: the OS-rendered `<select>` chevron, the grey `<input type="range">` track, the default checkbox, the platform date picker. They ignore your accent, your surface stack, your easings, and your radius philosophy — they look like a different product bolted on. **No native chrome ships. Ever.** This is the #1 reason controls "look terrible."
+
+### The Cardinal Rule
+
+`appearance: none` on every form element, then rebuild it from the system. A control is just another surface — it obeys the same `rgba()` stack, the same accent derivation, the same three sacred easings, the same press feedback.
+
+```css
+.control {
+  appearance: none; -webkit-appearance: none;
+  font: 500 12px var(--font-data);
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  height: 34px; padding: 0 10px;
+  transition: background 120ms var(--ease-smooth-out),
+              border-color 120ms var(--ease-smooth-out),
+              box-shadow 120ms var(--ease-smooth-out);
+}
+@media (hover: hover) {
+  .control:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); }
+}
+.control:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-border);   /* respects radius — outline does not */
+  border-color: var(--accent);
+}
+.control:active { transform: scale(0.96); transition-duration: 100ms; }
+.control:disabled { opacity: 0.4; cursor: not-allowed; }
+```
+
+### Shared Anatomy (every control)
+- **Height rhythm:** 28px compact · 34px standard · 40px prominent. Pick one per surface and hold it — a control bar with mismatched heights reads as broken.
+- **Four states, always:** rest → hover (`+0.02` surface, `+0.07` border) → focus (accent ring) → active (`scale(0.96)`). Disabled is a fifth: `opacity: 0.4`, no hover.
+- **Focus ring:** `box-shadow: 0 0 0 2px var(--accent-border)`, never `outline`.
+- **Transition:** list the properties — `background, border-color, box-shadow, transform`. Never `transition: all`.
+- **No layout shift on state change.** Don't bold-on-hover or grow the box — pre-reserve the space.
+
+### Select → Custom Listbox
+Restyling the native `<select>` gets you a clean trigger, but the OS still draws the option menu (you cannot style it). For anything premium, replace it with a button + popover listbox.
+
+```
+Trigger:  button, control anatomy above, shows current VALUE + chevron (right)
+Chevron:  16px SVG, stroke 1.5, rotates 180° on open (180ms smooth-out)
+Popover:  popup-in keyframe (scale .95 + translateY 4px, 0.2s overshoot)
+          surface-1 + dark-panel shadow, radius 12px, max-height 280px, scroll
+Option:   height 32px, padding 0 10px, radius 6px
+          hover  → background: var(--accent-subtle)
+          active → accent text + check icon (right), draw-in via stroke-dashoffset
+Keyboard: ↑/↓ move, Enter select, type-ahead match, Esc close (returns focus to trigger)
+Open on:  mousedown (saves ~100ms perceived latency vs click)
+```
+If you must stay native (simple form, low stakes): `appearance: none`, supply the chevron as a `background-image` SVG data-URI positioned right, pad `padding-right: 28px`. Accept the option list stays OS-drawn — so reserve this for throwaway forms, never a hero surface.
+
+### Segmented / Pill Selector (the right default for "pick one of N")
+See **Pill Controls** above. The detail that makes it luxe: a single absolutely-positioned indicator div that slides `left` + `width` at `0.25s var(--ease-smooth-out)` — the segments themselves never animate. Equal-width segments, active label at `font-weight: 600` **pre-measured** so switching causes no reflow. Reach for this over a dropdown whenever N ≤ 5 — it shows all options at a glance and switches in one click.
+
+### Range Slider
+```
+Track:  height 4px, background rgba(255,255,255,0.08), radius full
+Fill:   accent, left of thumb — linear-gradient sized to the value %, or a wrapper div
+Thumb:  14px circle, background #fff (dark) / accent (light),
+        box-shadow 0 2px 6px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(0,0,0,0.04)
+Hover:  thumb scale(1.14) — transform, NEVER width (160ms smooth-out)
+Active: accent glow ring → box-shadow 0 0 0 6px var(--accent-glow)
+Bubble: current value floats above thumb on hover/drag (popup-in, --font-data, tnum)
+```
+`appearance: none` the track, then style `::-webkit-slider-thumb` and `::-moz-range-thumb` **separately** — they don't share a selector. Snap to steps and always show the live value; a slider with no readout is a guess.
+
+### Rotary Dial / Knob
+For a true "dial," draw it as SVG — don't fake it with a rotated `<div>`:
+```
+Track arc:  circle/arc, stroke rgba(255,255,255,0.08), stroke-width 4, round caps
+Value arc:  same path, stroke var(--accent), stroke-dasharray driven by value
+Indicator:  a tick or dot at the current angle
+Center:     monospace value, tnum, --font-data
+Drag:       vertical drag = ± value (ns-resize cursor), or angular drag for full rotary
+Active:     drop-shadow var(--accent-glow); value arc brightens
+```
+Lerp the arc to its target (`speed 0.2`) so it settles rather than snaps. Always pair a dial with a typed/scrub fallback — pure rotary is hard to set precisely.
+
+### Toggle Switch
+```
+Track:  36×20, radius full, rgba(255,255,255,0.08) off → var(--accent) on
+Knob:   16px circle, translateX(16px) on — transform, NEVER animate left
+Timing: 200ms var(--ease-overshoot-soft) (the knob carries a little weight)
+```
+Takes effect **immediately** — never gate a toggle behind a confirm dialog. Color = state, so the track is the label; add a text label only if the meaning isn't obvious from context.
+
+### Checkbox & Radio
+Checkbox: the **Checkbox Draw Effect** above (stroke-dashoffset, 0.2s in / 0.1s out). Radio: inner dot `scale(0) → scale(1)` on the overshoot curve. Both get the box-shadow focus ring. Hit target ≥ 24px even when the glyph is 16px — pad the label, don't grow the glyph.
+
+### Number Stepper & Scrub-Label
+- **Stepper:** monospace field + tiny ▲▼ (or −/+) with hold-to-repeat. `tnum` so digits don't jump width.
+- **Scrub-label** (Figma / Bret Victor): the value label itself is draggable horizontally — `cursor: ew-resize`, drag changes the number live. Display + input in one element (see Compound Control Taxonomy). Pointer-lock for infinite drag; Shift = fine, Alt = coarse.
+
+### Multi-Select / Combobox
+Trigger holds selected values as removable chips (chip = label + 12px `×`, `scale(0.92)` press on the `×`). Popover is the custom listbox with a checkmark per selected row and a type-to-filter input pinned at the top. The input filters in place — no separate "search" control beside it.
+
+### Date / Time
+Native `<input type="date">` looks different on every OS and ignores the system — **don't ship it.** Use either a custom calendar popover (cells on the 32px grid, today = accent ring, selected = accent fill, range = accent-subtle band) or three monospace scrub-fields (DD / MM / YYYY) for fast keyboard entry. For dashboards, prefer a **range** control — and remember a pannable/zoomable timeline chart can BE the date picker (see Consolidation).
+
+---
+
 ## Icon System
 
 All icons are custom SVG:
@@ -763,6 +869,92 @@ Every page needs a hero that earns attention. Stripe's approach: bold claim, ful
 
 ---
 
+## Interactive Dashboards Are Programs, Not Posters
+
+When the brief says "interactive dashboard," the failure mode is a single static screen with controls that don't do anything — a screenshot wearing a UI costume. **An interactive dashboard is a small application: real state, multiple distinct views, and filters that actually filter.** If the user can't change what they're looking at and watch the data respond, you haven't built a dashboard — you've built a poster.
+
+**This section is mandatory whenever the request involves a dashboard, admin panel, analytics view, monitoring surface, or "explore this data."** Do not ship a single inert view and call it interactive.
+
+### Plan the Program Before the Pixels (REQUIRED)
+
+Before writing any markup, write down three things. Do not skip to CSS.
+
+1. **The state model** — one object that drives everything. What can the user change?
+   ```js
+   const state = {
+     view: 'overview',          // which view is active
+     filters: { … },            // every active filter
+     range: [start, end],       // time / value window
+     selected: null,            // the focused entity (drives cross-view linking)
+     hovered: null,
+   };
+   ```
+   Every interaction is a write to this object; every view is a pure render of it. This is the line between "interactive" and "static."
+
+2. **The views** — name **at least 3 distinct views**, each answering a *different question*. A view is not a re-skin: switching views must **re-shape the data**, not recolor the same chart. If two "views" show the same chart with a new palette, they are one view.
+
+3. **The interactions** — for each filter, what does it filter? For each view switch, what re-renders? When the user selects an entity in one view, what lights up in the others? Write the wiring before you build the chrome.
+
+### Different Views That Offer Something New
+
+Pick 3–5 from this set (or invent peers). The point is *orthogonality* — each reveals a structure the others hide:
+
+| View | Question it answers | Form |
+|------|--------------------|------|
+| **Overview** | "How are we doing right now?" | KPI cards w/ sparklines + one hero chart |
+| **Trend / Timeline** | "How did we get here?" | Time-series, pannable = its own date picker |
+| **Breakdown / Composition** | "What's it made of?" | Stacked bars, treemap, donut-with-detail |
+| **Comparison** | "How do these stack up?" | Small multiples, ranked bars, diverging |
+| **Relationships / Flow** | "What connects to what?" | Sankey, network, matrix, scatter |
+| **Detail / Drill-down** | "Tell me everything about *this one*" | Side panel or expanded row — NOT a new page |
+
+Each view gets its own empty, loading, and error state. Switching is a segmented control in the filter bar — instant, no full reload, animate only the content that changed.
+
+### The Single-Line Filter Bar (consolidate, don't stack)
+
+All filters live in **one horizontal row**, not a sidebar and not a stacked panel. Sticky to the top of the content. This is non-negotiable for a clean dashboard.
+
+```
+[ View ▸ segmented ]   [ ⌕ search/command ]   [ Range ▾ ]   [ Status ▾ ]   [ +2 ]  ·····  [ Clear ]
+└ left: what am I looking at ─────┘  └─ middle: scope it ──────────┘     right: reset ┘
+```
+- Layout: `display:flex; align-items:center; gap:6px; height:40px`. Controls use the **Controls, Dials & Selectors** anatomy so every height matches exactly.
+- Every filter is a **compound control** — it *shows its current value* and opens to change it (a status filter reads "Status: Active", not just "Status"). Display + input in one element.
+- Collapse overflow into a `+N` chip that opens the rest in a popover — the bar stays one line at any width.
+- An active-filter **count badge** and a **Clear** affordance that appears *only when filters are active*.
+- A `Cmd+K` command palette is the power-user path to every filter and view — teacher + tool in one.
+
+### The Single-Line Legend (it's a control, not a caption)
+
+A legend on its own stacked column of color keys is wasted space. Consolidate it into **one inline row**, sitting in the chart's title line, and make it *do* something:
+
+```
+Revenue ▦ 1.2M    Costs ▦ 840K    Margin ▦ 31%     ← swatch + label + LIVE value at cursor
+        click a series to solo/mute · hover to highlight · value tracks the crosshair
+```
+- 8px swatch + monospace label + the series' value **at the cursor** — the legend replaces the tooltip-legend entirely (Liveline pattern).
+- Click a series to **mute** it (opacity 0.35) or solo it (Alt-click). The legend IS the series toggle — no separate column of checkboxes.
+- One line: `display:flex; gap:16px; align-items:center`. Wraps gracefully at narrow widths but never stacks into a box.
+
+### Wire It Like an App
+- **Cross-view linking is the soul of a dashboard.** Selecting a bar filters the table; hovering a region highlights the matching line; brushing a range on the overview zooms the detail. One interaction, many views responding — never isolated widgets.
+- **Optimistic & instant** — filters apply in <100ms, no spinner for a local re-filter. Re-render only what changed.
+- **Persist the view** — reflect `state` in the URL (or memory) so a refresh doesn't reset the user. A specific view should be shareable.
+- **Keyboard** — arrow between rows, `Cmd+K` to jump, Esc to clear selection.
+
+### Definition of Done — "Interactive Dashboard"
+A static mock **fails** every one of these. Do not present a dashboard until they pass:
+- [ ] **≥ 3 distinct views**, switchable live, each re-shaping the data (not re-skinning it)
+- [ ] **Every filter actually filters** the rendered data — no decorative dropdowns
+- [ ] **≥ 1 cross-view link** (select / brush / hover in one view changes another)
+- [ ] **One-line filter bar** — no filter sidebar, no stacked filter panel
+- [ ] **One-line legend** that doubles as a series toggle and shows values at the cursor
+- [ ] **Every chart** has crosshair / hover / click (the 3-Layer Rule) — zero static charts
+- [ ] **No dead ends** — no "click to see more" that goes nowhere; detail opens in a panel, not a void
+- [ ] **State is real** — one state object drives render; the view survives a refresh
+
+---
+
 ## Soul Philosophy
 
 **1. The 90/10 Novelty Rule.** 90% of an interface should be familiar (Benji's precision, Stripe's density). 10-20% should be novel — the soul. The novel fraction must be **concentrated at key moments**: first impressions, empty states, idle moments, mode transitions. Spread evenly, it's noise. Concentrated at the right moments, it's magic.
@@ -855,6 +1047,8 @@ When building a component, ask:
 7. **Does this involve canvas?** Use rAF + exponential lerp. Stop when tab hidden. Cap DPR at 3x.
 8. **Is this the 90% or the 10%?** Know which. The 90% is reliable and familiar. The 10% is where you invest soul. Don't put soul everywhere — concentrate it.
 9. **Does this unfold?** Hook → Body → Reward. If you're showing everything at once, ask why.
+10. **Is this a control?** Never native. `appearance: none` and rebuild from the surface stack — four states, accent focus ring, `scale(0.96)` press, live value readout for sliders/dials. (Controls, Dials & Selectors)
+11. **Is this a dashboard?** Then it's a program, not a poster: one state object, ≥3 distinct views, filters that actually filter, a one-line filter bar and a one-line legend. (Interactive Dashboards Are Programs)
 
 ---
 
@@ -883,6 +1077,9 @@ When building a component, ask:
 - Animations on high-frequency, low-novelty actions — right-click menus should open instantly (no motion), list item add/remove should snap, trivial button hovers should be `<150ms`. A 300ms bounce on a tab switched 100x/day becomes a cognitive tax. (Source: Rauno's [novelty essay](https://rauno.me/craft/novelty))
 
 ### Interaction
+- Native unstyled controls — shipping the OS `<select>` chevron, grey `range` track, default checkbox/radio, or platform date picker. `appearance: none` and rebuild every one from the surface stack. (Source: Controls, Dials & Selectors)
+- Sliders or dials with no value readout — every continuous control shows its live value (bubble, readout, or center label). A blind control is a guess. (Source: Controls, Dials & Selectors)
+- Animating `left`/`width` on a toggle knob or slider thumb — `transform: translateX()` / `scale()` only. (Source: GPU-first motion)
 - Dead zones between clickable list items — move padding inside the `<a>`/`<button>`. Every pixel clickable. (Source: Rauno's [interfaces.rauno.me](https://interfaces.rauno.me))
 - Font weight changes on hover — causes layout shift. Use opacity, color, or background instead. (Source: Rauno's [interfaces.rauno.me](https://interfaces.rauno.me))
 - Dropdown triggers on `click` — use `mousedown` for menus, saves ~100ms perceived latency. (Source: Rauno's [interaction design essay](https://rauno.me/craft/interaction-design))
@@ -898,6 +1095,11 @@ When building a component, ask:
 - Inconsistent disclosure patterns — pick a vocabulary (hover = preview, click = expand) and apply it everywhere. (Source: NN/g)
 - Data points with no hover state — every number, chart element, and metric needs layer 2 (hover context). (Source: 3-Layer Interaction Rule)
 - Static charts — if a chart doesn't respond to mouse interaction, it's a screenshot. Add crosshair, tooltip, or click-to-explore. (Source: Liveline interaction patterns)
+- Dashboards that are one static view — an interactive dashboard needs a real state object, ≥3 distinct views, and filters that actually filter. A single screen with inert controls is a poster. (Source: Interactive Dashboards Are Programs)
+- "Views" that only recolor the same chart — a real view re-shapes the data to answer a different question (overview vs. breakdown vs. comparison vs. flow), not a new palette on the same shape. (Source: Different Views That Offer Something New)
+- Filter sidebars or multi-row filter panels — consolidate every filter into one sticky line; overflow into a `+N` popover. (Source: Single-Line Filter Bar)
+- Stacked multi-row legends — one inline legend line that doubles as a series toggle and shows values at the cursor. (Source: Single-Line Legend)
+- Decorative controls that don't drive state — every filter, toggle, and dropdown on a dashboard must change what's rendered. A control wired to nothing is a lie. (Source: Interactive Dashboards Are Programs)
 - Carousels and auto-rotating sliders — <1% of users click them. Use a grid or single hero. (Source: CXL/NN/g research)
 - Scroll hijacking — never override native scroll. Use `IntersectionObserver` for scroll-triggered effects. (Source: NN/g scrolljacking research)
 
@@ -1013,6 +1215,14 @@ After writing or reviewing any code, run this checklist. **Do not present work t
 - [ ] Frequent low-novelty actions have zero animation: right-click menus open instantly, list item add/remove snaps, trivial button hovers are `<150ms`
 - [ ] Looping animations pause when scrolled offscreen (IntersectionObserver or `document.hidden`)
 
+### Controls & Inputs
+- [ ] No native controls — `appearance: none` on every `<select>`, `range`, checkbox, radio, date input, rebuilt from the surface stack
+- [ ] Every control has all four states (rest/hover/focus/active) + disabled, and a `box-shadow` focus ring (not `outline`)
+- [ ] Control heights share one rhythm per surface (28 / 34 / 40px) — no mismatched heights in a control bar
+- [ ] Sliders and dials show their live value (bubble, readout, or center label) — no blind controls
+- [ ] State changes cause no layout shift — no bold-on-hover, no width growth; pre-reserve the space
+- [ ] Toggles/selects take effect immediately and optimistically — no confirm dialog, no spinner for a local change
+
 ### Cohesion & Flow (The Designer Lens)
 Think like someone arriving for the first time, not someone who wrote the code:
 - [ ] **First 2 seconds** — What does the eye land on first? Is it the right thing? Is there a clear visual hierarchy or is everything competing for attention?
@@ -1030,6 +1240,14 @@ Think like someone arriving for the first time, not someone who wrote the code:
 - [ ] Are there adjacent controls that could merge into a compound control?
 - [ ] Hero section earns attention: bold claim + impressive visual, Show → Tell → Do flow
 - [ ] Page follows DENSE → BREATHE → DENSE → BREATHE → EXHALE pacing rhythm
+
+### Dashboard = Program (when building any dashboard / analytics surface)
+- [ ] A single state object drives every view; interactions write to it, views render from it
+- [ ] ≥ 3 distinct views, switchable live, each re-shaping the data (not recoloring one chart)
+- [ ] Every filter actually filters the rendered data; ≥ 1 cross-view link (select / brush / hover propagates)
+- [ ] Filters consolidated into one sticky single-line bar; overflow into a `+N` popover (no sidebar)
+- [ ] Legend is one inline line that toggles series and shows values at the cursor
+- [ ] No static charts (3-Layer Rule) and no dead-end "click to see more"; the view persists across refresh
 
 ### Soul Check (per spectrum settings)
 - [ ] **Where is the 10-20%?** Identify which element(s) carry the novelty budget. If nothing does, add one.
