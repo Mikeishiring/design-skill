@@ -1,5 +1,8 @@
 ---
+name: benjistripe
 description: "Apply the Benji + Stripe fused design language — precision developer luxe. Use when building frontends, form controls (selects, sliders, dials, toggles), interactive multi-view dashboards, marketing pages, data-rich UIs, or live charts that need to feel both precise and premium. Forbids native/unstyled controls and static dashboards."
+metadata:
+  short-description: Precision developer luxe UI — Benji + Stripe fused
 ---
 
 # /benjistripe — Precision Developer Luxe
